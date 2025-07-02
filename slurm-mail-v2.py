@@ -90,11 +90,11 @@ def main():
     # little bit of fun easter eggs for whoever I choose to subject my wrath upon
     sneak = ''
     sneak_dict = {
-      'tdjones22': '<li><strong>Suprise:</strong> The Goatiest Goat who ever Goated</li>',
-      'blmendo22': '<li><strong>Suprise:</strong> Waddup blmendo22 play me a lil tune on yo piano keyboard</li>',
-      'ctknight22': "<li><strong>Suprise:</strong> Charlie took Monkey D server from us...we can't let that slide</li>",
-      'pelibby16': '<li><strong>Suprise:</strong> Tried smuggling a laser pointer onto a plane?! Shame on you</li>',
-      'charliep': '<li><strong>Suprise:</strong> Charles Franklin Peck III</li>'
+      'tdjones22': '<li><strong>Surprise:</strong> The Goatiest Goat who ever Goated</li>',
+      'blmendo22': '<li><strong>Surprise:</strong> Waddup blmendo22 play me a lil tune on yo piano keyboard</li>',
+      'ctknight22': "<li><strong>Surprise:</strong> Charlie took Monkey D server from us...we can't let that slide</li>",
+      'pelibby16': '<li><strong>Surprise:</strong> Tried smuggling a laser pointer onto a plane?! Shame on you</li>',
+      'charliep': '<li><strong>Surprise:</strong> Charles Franklin Peck III</li>'
     }
     if user_id.strip() in sneak_dict.keys():
       sneak = sneak_dict[user_id]
