@@ -1,17 +1,42 @@
-#!/usr/bin/python
-
-# Written by your truly, Tyler Jones ;)
+# Written by yours truly, Tyler Jones ;)
 
 import subprocess
 import sys
 import re
 import time
-from email.message import EmailMessage
+import random
 import textwrap
+from email.message import EmailMessage
+
+# you know what it does
+def get_hostname():
+
+    # matches for known cases of the 'hostname' command not returning a favorable hostname
+    hostname_match = {
+        'f0': 'faraday',
+        'h0': 'hamilton',
+        'w0': 'whedon'
+    }
+
+    # run the linux command and store process
+    hostname_proc = subprocess.run('hostname', stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+    # turn process into text output
+    hostname = hostname_proc.stdout.strip()
+
+    # in a case where the hostname is something like 'w0.whedon.loc' we can isolate the important bit
+    if '.' in hostname:
+        hostname = hostname.split('.')[0]
+
+    # no server hostnames we have (as of 12/22/2025) are less than two characters long
+    if len(hostname) <= 2:
+        hostname = hostname_match[hostname]
+
+    return hostname
 
 # funtion that extracts job ID from Slurm output passed through MailProg to then be used in 'scontrol show job ID'
 def get_scontrol_info():
-    
+
     # bool to return that will be used in main()
     info_fail = False
     fail_reason = ""
@@ -82,11 +107,11 @@ def extract_info(job_text, string):
         return match.group(1)
 
 # function to craft and send the HTML email with an input subject, body, and recipiant email
-def send_html_email(subject, html_body, to_email):
+def send_html_email(subject, html_body, to_email, hostname):
 
     # instantiate email message and set fields based on input variables
     msg = EmailMessage()
-    msg['From'] = "Hamilton Slurm Scheduler <slurm@hamilton.cluster.earlham.edu>"
+    msg['From'] = f"{hostname.capitalize()} Slurm Scheduler <slurm@{hostname.lower()}.cluster.earlham.edu>"
     msg['To'] = to_email
     msg['Subject'] = subject
 
@@ -100,11 +125,11 @@ def send_html_email(subject, html_body, to_email):
     with subprocess.Popen(['/usr/sbin/sendmail', '-t'], stdin=subprocess.PIPE) as proc:
         proc.communicate(msg.as_bytes())
 
-def send_fail_email(subject, body, to_email):
-    
+def send_fail_email(subject, body, to_email, hostname):
+
     # instantiate email message and set fields based on input variables
     msg = EmailMessage()
-    msg['From'] = "Hamilton Slurm Scheduler <slurm@hamilton.cluster.earlham.edu>"
+    msg['From'] = f"{hostname.capitalize()} Slurm Scheduler <slurm@{hostname.lower()}.cluster.earlham.edu>"
     msg['To'] = to_email
     msg['Subject'] = subject
 
@@ -116,12 +141,15 @@ def send_fail_email(subject, body, to_email):
         proc.communicate(msg.as_bytes())
 
 def main():
-    
+
+    # get hostname
+    hostname = get_hostname()
+
     # default failure fallbacks
     admin_email = "tdjones22@earlham.edu"
     user_email = None
     fail_reason = ""
-    
+
     # dynamically search for user email in list of args passed to script
     for arg in sys.argv:
         if "@earlham.edu" in arg:
@@ -130,10 +158,10 @@ def main():
     else:
         # set fail reason and subject for email
         fail_reason = "Email not passed to script."
-        fail_subject = "Hamilton Slurm Mail Failure"
+        fail_subject = f"{hostname.capitalize()} Slurm Mail Failure"
 
         # send failure email and exit now
-        send_fail_email(fail_subject, fail_reason, admin_email)
+        send_fail_email(fail_subject, fail_reason, admin_email, hostname)
         exit(1)
 
     # get scontrol info
@@ -141,10 +169,10 @@ def main():
 
     # check if get_scontrol_info() reported any errors, send error email, and exit script now
     if fail_bool == True:
-        fail_subject = "Hamilton Slurm Mail Failure"
+        fail_subject = f"{hostname.capitalize()} Slurm Mail Failure"
 
         # send failure email and exit now
-        send_fail_email(fail_subject, fail_reason, user_email)
+        send_fail_email(fail_subject, fail_reason, user_email, hostname)
         exit(1)
 
     # job summary info
@@ -163,16 +191,18 @@ def main():
     user_id = extract_info(job_info, 'UserId').split('(')[0].strip()
 
     # little bit of fun easter eggs for whoever I choose to subject my wrath upon
-    sneak = ''
     sneak_dict = {
-      'tdjones22': '<li><strong>Surprise:</strong> The Goatiest Goat who ever Goated</li>',
-      'blmendo22': '<li><strong>Surprise:</strong> Waddup blmendo22 play me a lil tune on yo piano keyboard</li>',
-      'ctknight22': "<li><strong>Surprise:</strong> Charlie took Monkey D server from us...we can't let that slide</li>",
-      'pelibby16': '<li><strong>Surprise:</strong> Tried smuggling a laser pointer onto a plane?! Shame on you</li>',
-      'charliep': '<li><strong>Surprise:</strong> Charles Franklin Peck III</li>'
+        'tdjones22': ["Tyler? The Creator? Of this script?", "I live to Slurm; Slurm to live", "What could you possibly be running now?"],
+        'blmendo22': ["Waddup blmendo22 play me a lil tune on yo piano keyboard", "We boutta Slurm at Carlo's Cuisine", "'I want McDonalds' - Brandon Mendoza like everyday ever"],
+        'ctknight22': ["Charlie took Monkey D server from us...we can't let that slide", "I wear your beanie when I can't sleep at night", "ur banned", "She sbatch on my job until I Slurm"],
+        'pelibby16': ["Tried smuggling a laser pointer onto a plane?! Shame on you", "But wait, there's more", "I'm gonna steal all ur magic cards", "Sys Admin at 2 am: 'U up??'\nServer: 'Unable to connect to host'", "Slurming again?", "First person ever to put Linux on a MacBook"],
+        'charliep': ["Charles Franklin Peck III", "LittleFe 2.0 when?", "Best frisbee thrower at Earlham"]
     }
-    if user_id.strip() in sneak_dict.keys():
-      sneak = sneak_dict[user_id]
+    if user_id in sneak_dict.keys():
+        sneak_pick = random.choice(sneak_dict[user_id])
+        sneak = f"<li><strong>Surprise:</strong> {sneak_pick}</li>"
+    else:
+        sneak = ""
 
     # timing info
     run_time = extract_info(job_info, 'RunTime')
@@ -233,7 +263,7 @@ def main():
       </head>
       <body>
         <div class="content">
-            <h2 style="color: #004080;">Hamilton Slurm Job Report – {job_state}</h2>
+            <h2 style="color: #004080;">{hostname.capitalize()} Slurm Job Report – {job_state}</h2>
 
             <h3>📌 Job Summary</h3>
             <ul style="line-height: 150%">
@@ -275,13 +305,13 @@ def main():
             </ul>
 
             <hr>
-            <p style="color: #383838;">Automated Message Generated via /usr/bin/slurm-mail-v2 on Hamilton.</p>
+            <p style="color: #383838;">Automated Message Generated via /usr/bin/slurm-mail-v2 on {hostname.capitalize()}.</p>
         </div>
       </body>
     </html>
     """)
 
     # call the function to send the email
-    send_html_email(subject, html_output, user_email)
+    send_html_email(subject, html_output, user_email, hostname)
 
 main()
