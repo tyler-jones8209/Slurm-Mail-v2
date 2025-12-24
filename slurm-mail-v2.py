@@ -1,5 +1,7 @@
 # Written by yours truly, Tyler Jones ;)
 
+# UPDATED on 12/23/2025 (added get_hostname and made script more modular/usable on any machine)
+
 import subprocess
 import sys
 import re
