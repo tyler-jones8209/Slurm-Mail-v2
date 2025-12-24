@@ -2,7 +2,7 @@
 
 # Wrapper script for slurm-mail-v2.py that allows for usage on any of our machines (theoretically)
 
-# Written by Tyler Jones ;)
+# Written by Tyler Jones ;) on 12/23/2025
 
 # initial variables
 output_code=1
