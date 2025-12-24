@@ -4,6 +4,7 @@
 
 import subprocess
 import sys
+import socket
 import re
 import time
 import random
@@ -20,11 +21,8 @@ def get_hostname():
         'w0': 'whedon'
     }
 
-    # run the linux command and store process
-    hostname_proc = subprocess.run('hostname', stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
-
-    # turn process into text output
-    hostname = hostname_proc.stdout.strip()
+    # get hostname using socket library rather than all the subprocess bs
+    hostname = socket.gethostname().strip()
 
     # in a case where the hostname is something like 'w0.whedon.loc' we can isolate the important bit
     if '.' in hostname:
